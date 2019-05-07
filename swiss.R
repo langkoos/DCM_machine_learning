@@ -2,6 +2,7 @@ library(dplyr)
 library(magrittr)
 library(ranger)
 library(nnet)
+library(SOMbrero)
 
 
 
@@ -63,17 +64,26 @@ sm.train.ml <-
     CHOICE = relevel(CHOICE,ref=1)
   )
 
+sm.test.ml <- 
+  sm.test %>% 
+  mutate(
+    CHOICE = relevel(CHOICE,ref=1)
+  )
+
 mlr <- multinom(CHOICE ~ ., data=sm.train.ml)
 
 
 mlr.pred <- predict(mlr, data = sm.test)
 
 df.mlr <-
-  table(sm.test$CHOICE, mlr.pred)
+  table(sm.test.ml$CHOICE, mlr.pred)
 df.mlr
 
 acc.mlr <- (diag(df.mlr) %>% sum) / sum(df.mlr)
 acc.mlr
 
+margin.table(sm.train %>% model.matrix(CHOICE ~ .),1)
+  
 
+model.matrix(CHOICE ~ .)
   
