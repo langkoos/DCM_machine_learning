@@ -3,7 +3,7 @@ library(magrittr)
 library(ranger)
 library(nnet)
 library(SOMbrero)
-
+library(tibble)
 
 
 swissmetro <-
@@ -12,7 +12,7 @@ swissmetro <-
 
 sample_ids <-
   sample(1:nrow(swissmetro),
-         size = nrow(swissmetro) / 2,
+         size = nrow(swissmetro) / 3,
          replace = F)
 
 sm <-
@@ -37,11 +37,11 @@ sm <-
   )
 
 sm.train <-   sm %>%
-  select(-1:-4, -SM_AV, -TRAIN_AV) %>%
+  select(-1:-4, -SM_AV, -TRAIN_AV, -ORIGIN, -DEST) %>%
   slice(sample_ids)
 
 sm.test <-   sm %>%
-  select(-1:-4,-SM_AV, -TRAIN_AV) %>%
+  select(-1:-4,-SM_AV, -TRAIN_AV, -ORIGIN, -DEST) %>%
   slice(-sample_ids)
 
 rf <-
@@ -58,32 +58,19 @@ df
 acc <- (diag(df) %>% sum) / sum(df)
 acc
 
-sm.train.ml <- 
-  sm.train %>% 
-  mutate(
-    CHOICE = relevel(CHOICE,ref=1)
-  )
 
-sm.test.ml <- 
-  sm.test %>% 
-  mutate(
-    CHOICE = relevel(CHOICE,ref=1)
-  )
-
-mlr <- multinom(CHOICE ~ ., data=sm.train.ml)
+mlr <- multinom(CHOICE ~ ., data=sm.train)
 
 
 mlr.pred <- predict(mlr, data = sm.test)
 
 df.mlr <-
-  table(sm.test.ml$CHOICE, mlr.pred)
+  table(sm.test$CHOICE, mlr.pred)
 df.mlr
 
 acc.mlr <- (diag(df.mlr) %>% sum) / sum(df.mlr)
 acc.mlr
 
-margin.table(sm.train %>% model.matrix(CHOICE ~ .),1)
   
 
-model.matrix(CHOICE ~ .)
   
