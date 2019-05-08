@@ -4,7 +4,12 @@ library(ranger)
 library(nnet)
 library(SOMbrero)
 library(tibble)
+library(ggplot2)
 
+
+accuracy <- function(df) {
+  (diag(df) %>% sum) / sum(df)
+}
 
 swissmetro <-
   read.delim("~/git/DCM_course/swissmetro/pandas/swissmetro.dat")
@@ -12,8 +17,12 @@ swissmetro <-
 
 sample_ids <-
   sample(1:nrow(swissmetro),
-         size = nrow(swissmetro) / 3,
+         size = nrow(swissmetro) * .5,
          replace = F)
+
+
+# data conditioning -------------------------------------------------------
+
 
 sm <-
   swissmetro %>%
@@ -36,41 +45,59 @@ sm <-
     CHOICE = factor(CHOICE)
   )
 
-sm.train <-   sm %>%
-  select(-1:-4, -SM_AV, -TRAIN_AV, -ORIGIN, -DEST) %>%
+sm.train <-   
+  sm %>%
   slice(sample_ids)
 
-sm.test <-   sm %>%
-  select(-1:-4,-SM_AV, -TRAIN_AV, -ORIGIN, -DEST) %>%
+sm.test <-   
+  sm %>%
   slice(-sample_ids)
+
+
+# random forest -----------------------------------------------------------
+
 
 rf <-
   sm.train %>%
-  ranger(CHOICE ~ ., data = .)
+  select(-1:-4, -SM_AV,-TRAIN_AV,-ORIGIN,-DEST) %>% 
+  ranger(CHOICE ~ ., data = ., importance = "impurity")
 rf
+
+importance(rf) %>%
+  tibble(var = names(.), val = .) %>%
+  arrange(val %>% desc) %>%
+  qplot(
+    data = .,
+    geom = 'col',
+    x = var %>% reorder(-val),
+    y = val
+  )
+
 
 rf.pred <- predict(rf, data = sm.test)
 
-df <-
-  table(sm.test$CHOICE, rf.pred$predictions)
-df
-
-acc <- (diag(df) %>% sum) / sum(df)
-acc
-
-
-mlr <- multinom(CHOICE ~ ., data=sm.train)
+sm.test$rf <- rf.pred$predictions
+sm.test %>% 
+  select(CHOICE, rf) %>% 
+  table() %>% 
+  accuracy()
 
 
-mlr.pred <- predict(mlr, data = sm.test)
 
-df.mlr <-
-  table(sm.test$CHOICE, mlr.pred)
-df.mlr
+# ml estimation -----------------------------------------------------------
 
-acc.mlr <- (diag(df.mlr) %>% sum) / sum(df.mlr)
-acc.mlr
 
-  
+mlr <- 
+  sm.train %>% 
+  select(-1:-4, -SM_AV,-TRAIN_AV,-ORIGIN,-DEST) %>% 
+  multinom(CHOICE ~ ., data = .)
 
-  
+
+sm.test$mlr <- predict(mlr, sm.test)
+
+sm.test %>% 
+  select(CHOICE, mlr) %>% 
+  table() %>% 
+  accuracy()
+
+
