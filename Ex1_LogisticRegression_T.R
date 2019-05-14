@@ -31,23 +31,23 @@ betas<-c(1,1,1)
 loss<-function(beta,X,y){
   #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
   #Write code here!
-  mean(log(1+exp(-y*(X%*%beta))))
+  sum(log(1+exp(-y*(X%*%beta))))
   
   #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
 }
 
-#Evaluate loss function. (~0.70)
+#Evaluate loss function. (~210.7)
 loss(betas,X.mat,y)
 
 #To do: Define Gradient function
 grad <- function(beta, X, y){
   #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
   #Write code here!
-  -t(X)%*%((y)/(1+exp(y*(X%*%beta))))/length(y)
+  -t(X)%*%((y)/(1+exp(y*(X%*%beta))))
   
   #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
   }
-#Test Gradient function (0.14, 0.33, -0.17)
+#Test Gradient function (42.2, 99.3, -51.12)
 grad(betas,X.mat,y)
 
 
@@ -68,7 +68,7 @@ logGradDescent=function(X,y,beta_init,learning_rate,n_iterations){
 
 #Test Gradient Descent
 beta_init<-rnorm(3) #Initialize betas
-learning_rate<-0.2  #Input learning rate
+learning_rate<-0.01  #Input learning rate
 n_iterations<-300    #Number of iterations
 
 results <- logGradDescent(X.mat,y,beta_init,learning_rate,n_iterations)
